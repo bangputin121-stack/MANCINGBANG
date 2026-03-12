@@ -8,7 +8,7 @@ from database import Database
 from handlers.start import start_handler, register_handler
 from handlers.profile import profile_handler
 from handlers.fishing import fishing_handler, fishing_callback
-from handlers.map import map_handler, map_callback
+# from handlers.map import map_handler, map_callback
 from handlers.boost import boost_handler, boost_callback
 from handlers.bag import bag_handler
 from handlers.equipment import equipment_handler
@@ -44,7 +44,7 @@ def main():
     app.add_handler(CommandHandler("start", start_handler))
     app.add_handler(CommandHandler("profil", profile_handler))
     app.add_handler(CommandHandler("fishing", fishing_handler))
-    app.add_handler(CommandHandler("map", map_handler))
+    #app.add_handler(CommandHandler("map", map_handler))
     app.add_handler(CommandHandler("boost", boost_handler))
     app.add_handler(CommandHandler("bag", bag_handler))
     app.add_handler(CommandHandler("equipment", equipment_handler))
@@ -64,7 +64,7 @@ def main():
 
     # Callback query handlers
     app.add_handler(CallbackQueryHandler(fishing_callback, pattern="^fish_"))
-    app.add_handler(CallbackQueryHandler(map_callback, pattern="^map_"))
+    #app.add_handler(CallbackQueryHandler(map_callback, pattern="^map_"))
     app.add_handler(CallbackQueryHandler(boost_callback, pattern="^boost_"))
     app.add_handler(CallbackQueryHandler(upgrade_callback, pattern="^upgrade_"))
     app.add_handler(CallbackQueryHandler(shop_callback, pattern="^shop_"))
