@@ -32,7 +32,7 @@ async def map_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"{map_data['emoji']} *{map_data['name']}*{lock_info}\n"
             f"   📝 {map_data['description']}\n"
             f"   🎯 Rare Chance: {int(map_data['rare_chance']*100)}%\n"
-            f"   {'✅ Aktif' if is_current else ('🔓 Tersedia' if is_unlocked else f'🔒 Butuh Level {map_data[\"unlock_level\"]}')}\n\n"
+            f"   '✅ Aktif' if is_current else ('🔓 Tersedia' if is_unlocked else f'🔒 Butuh Level {map_data[\"unlock_level\"]}')}\n\n"
         )
 
         if is_unlocked and not is_current:
