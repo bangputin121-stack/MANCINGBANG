@@ -28,12 +28,24 @@ async def map_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not is_unlocked:
             lock_info = f" [Lv.{map_data['unlock_level']}]"
 
+# Bagian info dasar map
         text += (
             f"{map_data['emoji']} *{map_data['name']}*{lock_info}\n"
-            f"   📝 {map_data['description']}\n"
-            f"   🎯 Rare Chance: {int(map_data['rare_chance']*100)}%\n"
-            f"   {'✅ Aktif' if is_current else ('🔓 Tersedia' if is_unlocked else f'🔒 Butuh Level {map_data[\"unlock_level\"]}')}\n\n"
+            f"📝 {map_data['description']}\n"
+            f"🎯 Rare Chance: {int(map_data['rare_chance']*100)}%\n"
         )
+
+        # Logika status (DILUAR tanda kurung)
+        if is_current:
+            status = "✅ Aktif"
+        elif is_unlocked:
+            status = "🔓 Tersedia"
+        else:
+            lvl = map_data["unlock_level"]
+            status = f"🔒 Butuh Level {lvl}"
+
+        # Tambahkan status ke text
+         text += f"Status: {status}\n\n"
 
         if is_unlocked and not is_current:
             keyboard.append([InlineKeyboardButton(btn_text, callback_data=f"map_go_{map_id}")])
