@@ -2,7 +2,6 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 from game_data import MAPS
 
-
 async def map_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     db = context.bot_data['db']
     user = update.effective_user
@@ -19,8 +18,9 @@ async def map_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         is_current = player['current_map'] == map_id
         is_unlocked = player['level'] >= map_data['unlock_level']
 
-        status = "✅ " if is_current else ("🔓 " if is_unlocked else "🔒 ")
-        btn_text = f"{status}{map_data['name']}"
+        status_icon = "✅ " if is_current else ("🔓 " if is_unlocked else "🔒 ")
+        btn_text = f"{status_icon}{map_data['name']}"
+        
         if is_current:
             btn_text += " (Aktif)"
 
@@ -28,25 +28,26 @@ async def map_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not is_unlocked:
             lock_info = f" [Lv.{map_data['unlock_level']}]"
 
-# Bagian info dasar map
+        # 1. Info dasar map
         text += (
             f"{map_data['emoji']} *{map_data['name']}*{lock_info}\n"
             f"📝 {map_data['description']}\n"
             f"🎯 Rare Chance: {int(map_data['rare_chance']*100)}%\n"
         )
 
-        # Logika status (DILUAR tanda kurung)
+        # 2. Logika penentuan status teks (DILUAR tanda kurung)
         if is_current:
-            status = "✅ Aktif"
+            status_text = "✅ Aktif"
         elif is_unlocked:
-            status = "🔓 Tersedia"
+            status_text = "🔓 Tersedia"
         else:
             lvl = map_data["unlock_level"]
-            status = f"🔒 Butuh Level {lvl}"
+            status_text = f"🔒 Butuh Level {lvl}"
 
-        # Tambahkan status ke text
-         text += f"Status: {status}\n\n"
+        # 3. Tambahkan status ke text (Pastikan indentasi sejajar)
+        text += f"Status: {status_text}\n\n"
 
+        # 4. Logika Tombol
         if is_unlocked and not is_current:
             keyboard.append([InlineKeyboardButton(btn_text, callback_data=f"map_go_{map_id}")])
         elif is_current:
@@ -81,8 +82,8 @@ async def map_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.answer(f"Butuh Level {map_data['unlock_level']}!", show_alert=True)
             return
 
-        # Check unlock cost
-        if map_data['unlock_cost'] > 0:
+        # Cek biaya buka peta
+        if map_data.get('unlock_cost', 0) > 0:
             if player['coins'] < map_data['unlock_cost']:
                 await query.answer(
                     f"Butuh {map_data['unlock_cost']:,} koin untuk membuka peta ini!",
