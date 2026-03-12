@@ -1,0 +1,89 @@
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import ContextTypes
+from game_data import MAPS
+
+
+async def map_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    db = context.bot_data['db']
+    user = update.effective_user
+    player = db.get_player(user.id)
+
+    if not player:
+        await update.message.reply_text("❌ Kamu belum terdaftar. Gunakan /start.")
+        return
+
+    text = "🗺 *PETA MANCING*\n" + "─"*28 + "\n\nPilih lokasi memancingmu:\n\n"
+
+    keyboard = []
+    for map_id, map_data in MAPS.items():
+        is_current = player['current_map'] == map_id
+        is_unlocked = player['level'] >= map_data['unlock_level']
+
+        status = "✅ " if is_current else ("🔓 " if is_unlocked else "🔒 ")
+        btn_text = f"{status}{map_data['name']}"
+        if is_current:
+            btn_text += " (Aktif)"
+
+        lock_info = ""
+        if not is_unlocked:
+            lock_info = f" [Lv.{map_data['unlock_level']}]"
+
+        text += (
+            f"{map_data['emoji']} *{map_data['name']}*{lock_info}\n"
+            f"   📝 {map_data['description']}\n"
+            f"   🎯 Rare Chance: {int(map_data['rare_chance']*100)}%\n"
+            f"   {'✅ Aktif' if is_current else ('🔓 Tersedia' if is_unlocked else f'🔒 Butuh Level {map_data[\"unlock_level\"]}')}\n\n"
+        )
+
+        if is_unlocked and not is_current:
+            keyboard.append([InlineKeyboardButton(btn_text, callback_data=f"map_go_{map_id}")])
+        elif is_current:
+            keyboard.append([InlineKeyboardButton(f"📍 {map_data['name']} (Lokasi Saat Ini)", callback_data="map_noop")])
+
+    await update.message.reply_text(text, parse_mode='Markdown', reply_markup=InlineKeyboardMarkup(keyboard))
+
+
+async def map_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    data = query.data
+
+    if data == "map_noop":
+        return
+
+    if data.startswith("map_go_"):
+        map_id = data.replace("map_go_", "")
+        db = context.bot_data['db']
+        user = update.effective_user
+        player = db.get_player(user.id)
+
+        if not player:
+            return
+
+        map_data = MAPS.get(map_id)
+        if not map_data:
+            await query.answer("Peta tidak ditemukan!", show_alert=True)
+            return
+
+        if player['level'] < map_data['unlock_level']:
+            await query.answer(f"Butuh Level {map_data['unlock_level']}!", show_alert=True)
+            return
+
+        # Check unlock cost
+        if map_data['unlock_cost'] > 0:
+            if player['coins'] < map_data['unlock_cost']:
+                await query.answer(
+                    f"Butuh {map_data['unlock_cost']:,} koin untuk membuka peta ini!",
+                    show_alert=True
+                )
+                return
+            db.add_coins(user.id, -map_data['unlock_cost'])
+
+        db.update_player(user.id, current_map=map_id)
+        await query.edit_message_text(
+            f"✅ *Berhasil pindah ke {map_data['name']}!*\n\n"
+            f"📝 {map_data['description']}\n"
+            f"🎯 Rare Chance: {int(map_data['rare_chance']*100)}%\n\n"
+            f"Gunakan /fishing untuk mulai memancing! 🎣",
+            parse_mode='Markdown'
+        )
